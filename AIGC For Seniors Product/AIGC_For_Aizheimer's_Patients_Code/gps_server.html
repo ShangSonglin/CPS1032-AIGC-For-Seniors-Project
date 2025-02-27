@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>实时获取 GPS 坐标</title>
+</head>
+<body>
+    <h1>实时 GPS 数据</h1>
+    <p id="location">正在获取位置...</p>
+    <script>
+        const ws = new WebSocket("ws://localhost:8080"); // 与后端 WebSocket 服务器连接
+
+        if ("geolocation" in navigator) {
+            // 持续监听 GPS 位置
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    const gpsData = {
+                        latitude: lat,
+                        longitude: lng,
+                        accuracy: accuracy
+                    };
+
+                    // 显示在页面上
+                    document.getElementById("location").innerText =
+                        `纬度: ${lat}, 经度: ${lng}, 精度: ${accuracy} 米`;
+
+                    // 发送 GPS 数据到 WebSocket 后端
+                    ws.send(JSON.stringify(gpsData));
+                },
+                (error) => {
+                    console.error("无法获取位置:", error.message);
+                    document.getElementById("location").innerText = "无法获取位置。";
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 1000,
+                    timeout: 10000
+                }
+            );
+        } else {
+            document.getElementById("location").innerText = "设备不支持 GPS 定位。";
+        }
+
+        // WebSocket 状态
+        ws.onopen = () => console.log("WebSocket 已连接");
+        ws.onclose = () => console.log("WebSocket 已关闭");
+    </script>
+</body>
+</html>
